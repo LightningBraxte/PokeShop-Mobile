@@ -1,0 +1,270 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0"> <!-- Viewport for responsive design -->
+    <title>Pokeshop</title>
+    <style>
+        body {
+            margin: 0;
+            font-family: Arial, Helvetica, sans-serif;
+            background: #111;
+            color: white;
+            transition: 0.3s;
+        }
+
+        header {
+            background: black;
+            padding: 10px;
+            border-bottom: 3px solid yellow;
+            text-align: center; /* Center header content */
+        }
+
+        .logo {
+            font-size: 32px;
+            font-weight: bold;
+            color: yellow;
+        }
+
+        nav {
+            margin-top: 10px;
+            display: flex;
+            flex-direction: column; /* Stack buttons vertically */
+            align-items: center; /* Center buttons */
+            gap: 10px; /* Space between buttons */
+        }
+
+        nav button {
+            background: #111;
+            color: white;
+            border: 2px solid yellow;
+            padding: 12px 20px;
+            font-size: 16px;
+            font-weight: bold;
+            cursor: pointer;
+            border-radius: 8px;
+            transition: 0.2s;
+            width: 90%; /* Make buttons responsive */
+        }
+
+        nav button:hover {
+            background: yellow;
+            color: black;
+            transform: scale(1.05);
+        }
+
+        section {
+            display: none;
+            padding: 20px;
+        }
+
+        .active {
+            display: block;
+        }
+
+        .hero {
+            background: linear-gradient(135deg, yellow, red);
+            padding: 40px;
+            border-radius: 10px;
+            color: black;
+            text-align: center; /* Center text in hero section */
+        }
+
+        .cards {
+            display: flex;
+            flex-wrap: wrap;
+            justify-content: center; /* Center cards */
+            gap: 20px;
+        }
+
+        .card {
+            background: white;
+            color: black;
+            padding: 15px;
+            width: 90%; /* Responsive width */
+            max-width: 220px; /* Prevent too large */
+            border-radius: 10px;
+            position: relative;
+            text-align: center; /* Center text in cards */
+        }
+
+        .card img {
+            width: 100%;
+            border-radius: 10px;
+        }
+
+        .checkout-box {
+            max-width: 90%; /* Make checkout box responsive */
+            margin: auto;
+            background: white;
+            padding: 20px;
+            border-radius: 10px;
+            color: black;
+        }
+
+        .checkout-box input {
+            width: 100%;
+            padding: 10px;
+            margin: 10px 0;
+            border-radius: 6px;
+            border: 1px solid #ccc;
+        }
+
+        #checkoutWarning {
+            color: red;
+            margin-top: 10px;
+            font-weight: bold;
+            font-size: 14px;
+        }
+
+        @media (max-width: 600px) {
+            /* Adjust styles for mobile devices */
+            header {
+                padding: 5px;
+            }
+
+            .logo {
+                font-size: 24px;
+            }
+
+            nav button {
+                padding: 10px;
+                font-size: 14px;
+            }
+
+            .hero {
+                padding: 20px; /* Reduce padding for mobile */
+            }
+        }
+    </style>
+</head>
+<body>
+    <header>
+        <div class="logo">Pokeshop</div>
+        <nav>
+            <button onclick="showPage('home')">Home</button>
+            <button onclick="showPage('shop')">Shop</button>
+            <button onclick="showPage('cart')">Cart (<span id="cartCount">0</span>)</button>
+            <button onclick="showCheckout()">Checkout</button>
+            <button onclick="showPage('contact')">Contact Us</button>
+        </nav>
+    </header>
+
+    <section id="home" class="active">
+        <div class="hero">
+            <h1>Welcome to Pokeshop</h1>
+            <p>We have been operating for around 4 years and proudly received 5-star ratings from our customers.</p>
+            <img src="https://via.placeholder.com/600x200?text=Pokeshop+Cards" alt="Pokeshop Cards">
+        </div>
+    </section>
+
+    <section id="shop">
+        <h2>Shop</h2>
+        <input type="text" id="searchBar" placeholder="Search cards..." onkeyup="filterProducts()">
+        <div class="cards" id="productList"></div>
+    </section>
+
+    <section id="cart">
+        <h2>Your Cart</h2>
+        <table id="cartTable"></table>
+        <h3>Total: RM<span id="grandTotal">0</span></h3>
+        <button class="pay" onclick="showCheckout()">PAY</button>
+    </section>
+
+    <section id="checkout">
+        <h2>Checkout</h2>
+        <div id="checkoutContent" class="checkout-box">
+            <input placeholder="Full Name" id="fullName">
+            <input placeholder="Email" id="email">
+            <input placeholder="Address" id="address">
+            <button class="pay" onclick="confirmPayment()">Confirm Payment</button>
+            <div id="checkoutWarning">
+                PLEASE MAKE SURE ALL INFORMATION IS ACCURATE OR WE CANNOT SHIP YOUR ITEMS TO YOU.
+            </div>
+        </div>
+    </section>
+
+    <section id="contact">
+        <h2>Contact Us</h2>
+        <p>Phone: 01120559945</p>
+        <p>Location: Based in Selangor Malaysia</p>
+    </section>
+
+    <script>
+        // JavaScript functionality here (similar to the previous code)
+        const products = [
+            { name: 'Pikachu Card', price: 20, stock: 7 },
+            { name: 'Charizard Card', price: 150, stock: 2 },
+            { name: 'Mewtwo Card', price: 80, stock: 1 },
+            { name: 'Eevee Card', price: 25, stock: 0 }
+        ];
+
+        let cart = [];
+
+        function showPage(id) {
+            document.querySelectorAll('section').forEach(s => s.classList.remove('active'));
+            document.getElementById(id).classList.add('active');
+            if (id === 'cart') updateCart();
+        }
+
+        function renderProducts(filter = '') {
+            const productList = document.getElementById('productList');
+            productList.innerHTML = '';
+            products.forEach((p, i) => {
+                if (!p.name.toLowerCase().includes(filter.toLowerCase())) return;
+                const div = document.createElement('div');
+                div.className = 'card';
+                div.innerHTML = `
+                    <img src="https://via.placeholder.com/200?text=${p.name}" alt="${p.name}">
+                    <h3>${p.name}</h3>
+                    <p>RM${p.price}</p>
+                    <p style="color:${p.stock <= 0 ? 'red' : 'green'}">${p.stock <= 0 ? 'OUT OF STOCK' : 'Stock: ' + p.stock}</p>
+                    Qty <input type="number" id="qty${i}" min="1" value="1" ${p.stock <= 0 ? 'disabled' : ''}>
+                    <br><br>
+                    <button onclick="addToCart(${i})" ${p.stock <= 0 ? 'disabled' : ''}>Add to Cart</button>
+                `;
+                productList.appendChild(div);
+            });
+        }
+
+        function filterProducts() {
+            const val = document.getElementById('searchBar').value;
+            renderProducts(val);
+        }
+
+        function addToCart(i) {
+            const qty = parseInt(document.getElementById('qty' + i).value);
+            if (qty > products[i].stock) { alert("Not enough stock"); return; }
+            let f = cart.find(x => x.name === products[i].name);
+            if (f) f.qty += qty;
+            else cart.push({ name: products[i].name, price: products[i].price, qty });
+            products[i].stock -= qty;
+            document.getElementById('cartCount').innerText = cart.reduce((a, b) => a + b.qty, 0);
+            renderProducts(document.getElementById('searchBar').value);
+        }
+
+        function updateCart() {
+            const cartTable = document.getElementById('cartTable');
+            cartTable.innerHTML = '<tr><th>Item</th><th>Price</th><th>Qty</th><th>Total</th></tr>';
+            let t = 0;
+            cart.forEach((c, i) => {
+                t += c.price * c.qty;
+                let r = cartTable.insertRow();
+                r.insertCell(0).innerText = c.name;
+                r.insertCell(1).innerText = 'RM' + c.price;
+                r.insertCell(2).innerText = c.qty;
+                r.insertCell(3).innerText = 'RM' + (c.price * c.qty);
+            });
+            document.getElementById('grandTotal').innerText = t;
+        }
+
+        function confirmPayment() {
+            // Payment confirmation logic
+            alert("Payment confirmed!");
+        }
+
+        // Initial render
+        renderProducts();
+    </script>
+</body>
+</html>
